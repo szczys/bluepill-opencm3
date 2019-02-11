@@ -9,8 +9,6 @@
 void init_clocks(void);
 void init_io(void);
 void init_i2c(void);
-void iic_addr_and_reg(uint8_t addr, uint8_t reg);
-void iic_write_byte(uint8_t byte);
 void iic_cmd(uint8_t cmd);
 void init_oled(void);
 int main(void);
@@ -58,38 +56,9 @@ void init_i2c(void) {
   i2c_peripheral_enable(I2C1);
 }
 
-void iic_addr_and_reg(uint8_t addr, uint8_t reg) {
-  // Not sure why this needs to be so convoluted but I couldn't get i2c_transfer7() to work
-  // Method used here is from https://github.com/libopencm3/libopencm3-examples/blob/master/examples/stm32/f1/other/i2c_stts75_sensor/stts75.c
-
-  uint32_t reg32 __attribute__((unused));
-    
-  i2c_send_start(I2C1);
-  //Waiting for START is send and switched to master mode.
-  while (!((I2C_SR1(I2C1) & I2C_SR1_SB) & (I2C_SR2(I2C1) & (I2C_SR2_MSL | I2C_SR2_BUSY)))) {;;}
-  
-  i2c_send_7bit_address(I2C1, addr, I2C_WRITE);
-  while (!(I2C_SR1(I2C1) & I2C_SR1_ADDR)) {;;}
-
-  /* Cleaning ADDR condition sequence. */
-	reg32 = I2C_SR2(I2C1);
-
-  iic_write_byte(reg);
-}
-
-void iic_write_byte(uint8_t byte) {
-  i2c_send_data(I2C1, byte);
-	while (!(I2C_SR1(I2C1) & I2C_SR1_BTF)) {;;} // Await ByteTransferedFlag.
-}
-
 void iic_cmd(uint8_t cmd) {
   uint8_t data[2] = { 0x80, cmd };
   i2c_transfer7(I2C1, OLED_I2C_ADDR, data, 2, NULL, 0);
-  /*
-  iic_addr_and_reg(OLED_I2C_ADDR, OLED_iic_cmd);
-  iic_write_byte(cmd);
-  i2c_send_stop(I2C1);
-  */
 }
 
 void init_oled(void) {
@@ -158,18 +127,21 @@ int main() {
   init_i2c();
   init_oled();
 
+  /* //Seems like this block doesn't work
   i2c_send_start(I2C1);
-  iic_addr_and_reg(OLED_I2C_ADDR,0x40);
-  iic_write_byte(0xFF);
-  iic_write_byte(0xFF);
-  iic_write_byte(0xFF);
-  iic_write_byte(0xFF);
-  iic_write_byte(0xFF);
-  iic_write_byte(0xFF);
-  iic_write_byte(0xFF);
+  i2c_send_7bit_address (I2C1, OLED_I2C_ADDR, I2C_WRITE);
+  i2c_send_data(I2C1,0x40);
+  i2c_send_data(I2C1,0x00);
+  i2c_send_data(I2C1,0x00);
+  i2c_send_data(I2C1,0x00);
+  i2c_send_data(I2C1,0x00);
+  i2c_send_data(I2C1,0x00);
+  i2c_send_data(I2C1,0x00);
+  i2c_send_data(I2C1,0x00);
   i2c_send_stop(I2C1);
+  */
   
-  
+
   uint32_t i;
   uint8_t data[8] = { 0x40, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
   i2c_transfer7(I2C1, OLED_I2C_ADDR, data, 8, NULL, 0);
