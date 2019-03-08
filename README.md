@@ -6,6 +6,8 @@ This is based off of the [what Ross Schlaikjer did for CPP](https://rhye.org/pos
 
 libopencm3 is used as a submodule. After cloning, run:
 ```
+sudo apt install {gcc,libnewlib,binutils}-arm-none-eabi
+
 git submodule init
 git submodule update
 pushd libopencm3
